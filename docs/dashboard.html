@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard | Vetinos — YBYX</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>
+    tailwind.config = { theme: { extend: { colors: { primary: 'var(--ybyx-primary, #f97316)', primaryHover: 'var(--ybyx-primary-hover, #ea580c)', primaryLight: 'var(--ybyx-primary-light, #fff7ed)' } } } }
+  </script>
+</head>
+<body id="app-body" class="bg-[var(--ybyx-primary-light)] text-slate-800 min-h-screen flex font-sans transition-colors duration-300">
+
+  <!-- BARRA LATERAL -->
+  <aside id="app-sidebar" class="w-64 bg-white border-r border-slate-200 flex flex-col z-30 transition-all duration-300 no-print shadow-sm"></aside>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between no-print shadow-xs">
+      <h1 class="text-base font-bold text-slate-900">Dashboard & Configurações</h1>
+      <button onclick="toggleSidebarPosition()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition-colors border border-slate-200">
+        ⇄ Mudar Posição da Barra
+      </button>
+    </header>
+
+    <main class="p-6 flex-1 overflow-y-auto space-y-6 max-w-5xl">
+      <div class="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-2">
+        <h2 class="text-xl font-bold text-slate-900">Bem-vindo ao Painel Vetinos</h2>
+        <p class="text-xs text-slate-500">Sistema corporativo de gestão integrada — Padrão YBYX Corp.</p>
+      </div>
+
+      <!-- CARDS DE ACESSO RÁPIDO -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href="estoque.html" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-primary transition-all shadow-sm group">
+          <div class="text-2xl mb-2">📦</div>
+          <h3 class="font-bold text-slate-900 group-hover:text-primary transition-colors text-sm">Cadastro de Produtos</h3>
+          <p class="text-xs text-slate-500 mt-1">Gerencie o catálogo mestre e estoque inicial.</p>
+        </a>
+
+        <a href="validades.html" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-primary transition-all shadow-sm group">
+          <div class="text-2xl mb-2">⏳</div>
+          <h3 class="font-bold text-slate-900 group-hover:text-primary transition-colors text-sm">Validades & Lotes</h3>
+          <p class="text-xs text-slate-500 mt-1">Monitore prazos de vencimento organizados por urgência.</p>
+        </a>
+
+        <a href="inventario.html" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-primary transition-all shadow-sm group">
+          <div class="text-2xl mb-2">📊</div>
+          <h3 class="font-bold text-slate-900 group-hover:text-primary transition-colors text-sm">Inventário & Contagem</h3>
+          <p class="text-xs text-slate-500 mt-1">Faça a contagem física com cálculo de diferenças (+/-).</p>
+        </a>
+      </div>
+
+      <!-- SELETOR DE TEMAS (7 PALETAS COMPLETAS YBYX) -->
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-4">
+        <h3 class="text-sm font-bold text-slate-800">Paleta de Cores & Identidade Visual YBYX</h3>
+        <p class="text-xs text-slate-500">Clique para alterar instantaneamente o tema, os botões e o fundo suave harmonizado do sistema inteiro:</p>
+        <div class="flex flex-wrap gap-3 pt-2">
+          <!-- Laranja -->
+          <button onclick="applyTheme('#f97316', '#ea580c', '#fff7ed')" class="w-10 h-10 rounded-full bg-orange-500 hover:scale-110 transition-transform shadow-md" title="Laranja YBYX"></button>
+          <!-- Azul -->
+          <button onclick="applyTheme('#3b82f6', '#2563eb', '#eff6ff')" class="w-10 h-10 rounded-full bg-blue-500 hover:scale-110 transition-transform shadow-md" title="Azul Corporativo"></button>
+          <!-- Verde -->
+          <button onclick="applyTheme('#22c55e', '#16a34a', '#f0fdf4')" class="w-10 h-10 rounded-full bg-green-500 hover:scale-110 transition-transform shadow-md" title="Verde Veterinário"></button>
+          <!-- Cinza / Slate -->
+          <button onclick="applyTheme('#334155', '#1e293b', '#f8fafc')" class="w-10 h-10 rounded-full bg-slate-700 hover:scale-110 transition-transform shadow-md" title="Cinza Executivo"></button>
+          <!-- Roxo -->
+          <button onclick="applyTheme('#a855f7', '#9333ea', '#faf5ff')" class="w-10 h-10 rounded-full bg-purple-500 hover:scale-110 transition-transform shadow-md" title="Roxo Premium"></button>
+          <!-- Vermelho -->
+          <button onclick="applyTheme('#ef4444', '#dc2626', '#fef2f2')" class="w-10 h-10 rounded-full bg-red-500 hover:scale-110 transition-transform shadow-md" title="Vermelho Alerta"></button>
+          <!-- Amarelo -->
+          <button onclick="applyTheme('#eab308', '#ca8a04', '#fefce8')" class="w-10 h-10 rounded-full bg-yellow-500 hover:scale-110 transition-transform shadow-md" title="Amarelo Ouro"></button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="assets/js/sidebar.js"></script>
+  <script>
+    renderSidebar('dashboard');
+
+    function toggleSidebarPosition() {
+      const body = document.getElementById('app-body');
+      body.classList.toggle('flex-row-reverse');
+      localStorage.setItem('ybyx_sidebar_right', body.classList.contains('flex-row-reverse'));
+    }
+
+    function applyTheme(primary, hover, lightBg) {
+      document.documentElement.style.setProperty('--ybyx-primary', primary);
+      document.documentElement.style.setProperty('--ybyx-primary-hover', hover);
+      document.documentElement.style.setProperty('--ybyx-primary-light', lightBg);
+      
+      localStorage.setItem('ybyx_primary', primary);
+      localStorage.setItem('ybyx_hover', hover);
+      localStorage.setItem('ybyx_light', lightBg);
+    }
+  </script>
+</body>
+</html>

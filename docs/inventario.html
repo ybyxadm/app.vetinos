@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventário & Contagem | Vetinos — YBYX</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>
+    tailwind.config = { theme: { extend: { colors: { primary: 'var(--ybyx-primary, #f97316)', primaryHover: 'var(--ybyx-primary-hover, #ea580c)' } } } }
+  </script>
+</head>
+<body id="app-body" class="bg-slate-100 text-slate-800 min-h-screen flex font-sans">
+
+  <aside id="app-sidebar" class="w-64 bg-white border-r border-slate-200 flex flex-col z-30 transition-all duration-300 no-print"></aside>
+
+  <div class="flex-1 flex flex-col min-w-0">
+    <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between no-print">
+      <h1 class="text-base font-bold text-slate-900">Inventário & Contagem Física</h1>
+      <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-2 px-4 rounded-xl transition-colors">🖨️ Imprimir Folha de Contagem</button>
+    </header>
+
+    <main class="p-6 flex-1 overflow-y-auto space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+              <th class="py-3 px-4 font-semibold">Produto</th>
+              <th class="py-3 px-4 font-semibold">Estoque Sistema</th>
+              <th class="py-3 px-4 font-semibold">Contagem Física</th>
+              <th class="py-3 px-4 font-semibold">Diferença (+/-)</th>
+              <th class="py-3 px-4 text-right font-semibold no-print">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-table-body" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script src="assets/js/sidebar.js"></script>
+  <script>
+    renderSidebar('inventario');
+
+    function loadInventory() {
+      const products = JSON.parse(localStorage.getItem('ybyx_products') || '[]');
+      const tbody = document.getElementById('inventory-table-body');
+      tbody.innerHTML = products.length === 0 ? `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum produto no estoque para inventário.</td></tr>` : '';
+      
+      products.forEach(p => {
+        const physical = p.physicalStock !== undefined ? p.physicalStock : p.stock;
+        const diff = physical - p.stock;
+        let diffBadge = `<span class="px-2 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-700">0</span>`;
+        if (diff > 0) diffBadge = `<span class="px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-700">+${diff}</span>`;
+        if (diff < 0) diffBadge = `<span class="px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">${diff}</span>`;
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-4 font-medium text-slate-900">${p.name} <span class="text-xs font-mono text-slate-400">(${p.code})</span></td>
+            <td class="py-3 px-4 font-semibold text-slate-700">${p.stock} un</td>
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-2">
+                <button onclick="adjustStock('${p.id}', -1)" class="w-7 h-7 bg-slate-200 hover:bg-slate-300 rounded-lg font-bold text-slate-700">-</button>
+                <span id="phys-${p.id}" class="w-8 text-center font-bold">${physical}</span>
+                <button onclick="adjustStock('${p.id}', 1)" class="w-7 h-7 bg-slate-200 hover:bg-slate-300 rounded-lg font-bold text-slate-700">+</button>
+              </div>
+            </td>
+            <td class="py-3 px-4">${diffBadge}</td>
+            <td class="py-3 px-4 text-right no-print"><button onclick="saveCount('${p.id}')" class="text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-semibold">Salvar</button></td>
+          </tr>
+        `;
+      });
+    }
+
+    window.adjustStock = function(id, delta) {
+      let products = JSON.parse(localStorage.getItem('ybyx_products') || '[]');
+      products = products.map(p => {
+        if (p.id === id) {
+          if (p.physicalStock === undefined) p.physicalStock = p.stock;
+          p.physicalStock = Math.max(0, p.physicalStock + delta);
+        }
+        return p;
+      });
+      localStorage.setItem('ybyx_products', JSON.stringify(products));
+      loadInventory();
+    }
+
+    window.saveCount = function(id) {
+      let products = JSON.parse(localStorage.getItem('ybyx_products') || '[]');
+      products = products.map(p => {
+        if (p.id === id && p.physicalStock !== undefined) {
+          p.stock = p.physicalStock;
+        }
+        return p;
+      });
+      localStorage.setItem('ybyx_products', JSON.stringify(products));
+      alert('Contagem sincronizada com o estoque oficial!');
+      loadInventory();
+    }
+
+    window.addEventListener('DOMContentLoaded', loadInventory);
+  </script>
+</body>
+</html>

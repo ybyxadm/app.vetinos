@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadastro de Produtos | Vetinos — YBYX</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>
+    tailwind.config = { theme: { extend: { colors: { primary: 'var(--ybyx-primary, #f97316)', primaryHover: 'var(--ybyx-primary-hover, #ea580c)', primaryLight: 'var(--ybyx-primary-light, #fff7ed)' } } } }
+  </script>
+</head>
+<body id="app-body" class="bg-[var(--ybyx-primary-light)] text-slate-800 min-h-screen flex font-sans transition-colors duration-300">
+
+  <aside id="app-sidebar" class="w-64 bg-white border-r border-slate-200 flex flex-col z-30 transition-all duration-300 no-print shadow-sm"></aside>
+
+  <div class="flex-1 flex flex-col min-w-0">
+    <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between no-print shadow-xs">
+      <h1 class="text-base font-bold text-slate-900">Cadastro de Produtos & Estoque</h1>
+      <div class="flex gap-2">
+        <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-2 px-4 rounded-xl transition-colors">🖨️ Imprimir</button>
+        <button onclick="openProductModal()" class="bg-primary hover:bg-primaryHover text-white text-xs font-semibold py-2 px-4 rounded-xl transition-colors shadow-sm">+ Novo Produto</button>
+      </div>
+    </header>
+
+    <main class="p-6 flex-1 overflow-y-auto space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+              <th class="py-3 px-4 font-semibold">Cód. Sistema</th>
+              <th class="py-3 px-4 font-semibold">Cód. Barras</th>
+              <th class="py-3 px-4 font-semibold">Nome do Produto</th>
+              <th class="py-3 px-4 font-semibold">Categoria</th>
+              <th class="py-3 px-4 font-semibold">Validade (MM/AAAA)</th>
+              <th class="py-3 px-4 font-semibold">Estoque</th>
+              <th class="py-3 px-4 text-right font-semibold no-print">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="products-table-body" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <div id="product-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl p-6 max-w-lg w-full space-y-4 shadow-xl">
+      <h3 class="text-base font-bold text-slate-900">Cadastrar Novo Produto</h3>
+      <form id="product-form" onsubmit="handleProductSubmit(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Nome do Produto *</label>
+          <input type="text" id="p-name" required placeholder="Ex: Amoxicilina 250mg" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Categoria *</label>
+            <select id="p-category" required class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg bg-white">
+              <option value="Medicamento">Medicamento</option>
+              <option value="Insumo">Insumo</option>
+              <option value="Equipamento">Equipamento</option>
+              <option value="Imunizante">Imunizante</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Validade (MM/AAAA) *</label>
+            <input type="text" id="p-expiry" required placeholder="Ex: 12/2028" maxlength="7" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Estoque Inicial *</label>
+            <input type="number" id="p-stock" required value="10" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Custo (Opcional)</label>
+            <input type="text" id="p-cost" placeholder="Ex: R$ 45,00" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Fornecedor (Opcional)</label>
+          <input type="text" id="p-supplier" placeholder="Ex: Distribuidora VetMaster" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Código de Barras</label>
+          <div class="flex gap-2">
+            <input type="text" id="p-barcode" placeholder="Leitor ou digitação" class="flex-1 text-sm px-3 py-2 border border-slate-300 rounded-lg">
+            <button type="button" onclick="alert('Câmera ativada!')" class="bg-slate-200 hover:bg-slate-300 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700">📷 Câmera</button>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeProductModal()" class="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+          <button type="submit" class="px-4 py-2 text-xs bg-primary text-white font-semibold rounded-lg">Salvar Produto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/sidebar.js"></script>
+  <script>
+    renderSidebar('estoque');
+
+    function getProducts() {
+      const data = localStorage.getItem('ybyx_products');
+      if (!data) {
+        const initial = [
+          { id: '1', code: '000.001', barcode: '78910001', name: 'Dipirona 500mg/ml', category: 'Medicamento', expiry: '05/2027', stock: 50, cost: 'R$ 12,00', supplier: 'VetMaster' }
+        ];
+        localStorage.setItem('ybyx_products', JSON.stringify(initial));
+        return initial;
+      }
+      return JSON.parse(data);
+    }
+
+    function loadProducts() {
+      const list = getProducts();
+      const tbody = document.getElementById('products-table-body');
+      tbody.innerHTML = list.length === 0 ? `<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhum produto cadastrado.</td></tr>` : '';
+      list.forEach(p => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-4 font-mono text-xs font-bold text-primary">${p.code}</td>
+            <td class="py-3 px-4 font-mono text-xs text-slate-500">${p.barcode || '-'}</td>
+            <td class="py-3 px-4 font-medium text-slate-900">${p.name}</td>
+            <td class="py-3 px-4 text-slate-600">${p.category}</td>
+            <td class="py-3 px-4 font-mono text-xs text-slate-600">${p.expiry || '-'}</td>
+            <td class="py-3 px-4 font-semibold text-slate-800">${p.stock} un</td>
+            <td class="py-3 px-4 text-right no-print"><button onclick="deleteProduct('${p.id}')" class="text-slate-400 hover:text-red-600 text-xs font-medium">Excluir</button></td>
+          </tr>
+        `;
+      });
+    }
+
+    function openProductModal() { document.getElementById('product-form').reset(); document.getElementById('product-modal').classList.remove('hidden'); }
+    function closeProductModal() { document.getElementById('product-modal').classList.add('hidden'); }
+
+    function handleProductSubmit(e) {
+      e.preventDefault();
+      const list = getProducts();
+      const nextSeq = list.length + 1;
+      const formattedCode = String(nextSeq).padStart(3, '0') + '.' + String(Math.floor(100 + Math.random() * 900));
+
+      const productName = document.getElementById('p-name').value;
+      const productExpiry = document.getElementById('p-expiry').value;
+
+      const newProduct = {
+        id: Date.now().toString(),
+        code: formattedCode,
+        barcode: document.getElementById('p-barcode').value,
+        name: productName,
+        category: document.getElementById('p-category').value,
+        expiry: productExpiry,
+        stock: parseInt(document.getElementById('p-stock').value) || 0,
+        cost: document.getElementById('p-cost').value,
+        supplier: document.getElementById('p-supplier').value
+      };
+
+      list.push(newProduct);
+      localStorage.setItem('ybyx_products', JSON.stringify(list));
+
+      let validities = JSON.parse(localStorage.getItem('ybyx_validities') || '[]');
+      let expiryFormatted = '2027-12-31';
+      if (productExpiry && productExpiry.includes('/')) {
+        const parts = productExpiry.split('/');
+        if (parts.length === 2) { expiryFormatted = `${parts[1]}-${parts[0]}-01`; }
+      }
+
+      validities.push({
+        id: 'val-' + newProduct.id,
+        name: productName,
+        expiry: expiryFormatted,
+        expiryDisplay: productExpiry,
+        batch: 'LOTE-' + Math.floor(1000 + Math.random() * 9000),
+        location: 'Farmácia Central'
+      });
+      localStorage.setItem('ybyx_validities', JSON.stringify(validities));
+
+      closeProductModal();
+      loadProducts();
+      alert('Produto cadastrado e integrado com sucesso ao controle de validades!');
+    }
+
+    function deleteProduct(id) {
+      if (confirm('Deseja excluir este produto?')) {
+        localStorage.setItem('ybyx_products', JSON.stringify(getProducts().filter(p => p.id !== id)));
+        loadProducts();
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadProducts);
+  </script>
+</body>
+</html>

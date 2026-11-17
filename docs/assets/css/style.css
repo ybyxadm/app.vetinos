@@ -1,0 +1,8 @@
+:root {
+  --ybyx-primary: #f97316;
+  --ybyx-primary-hover: #ea580c;
+}
+
+@media print {
+  .no-print { display: none !important; }
+}
