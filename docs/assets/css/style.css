@@ -3,85 +3,146 @@
   --ybyx-primary-hover: #ea580c;
 }
 
+/* Layout responsivo compartilhado: não depende da execução do JavaScript. */
 @media (max-width: 767px) {
-  body.mobile-sidebar-enabled {
-    display: block;
-    min-height: 100vh;
+  html, body {
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
   }
 
-  body.mobile-sidebar-enabled #app-sidebar {
-    position: fixed;
-    inset: 0 auto 0 0;
-    width: 16rem !important;
+  body#app-body {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  body#app-body > #app-sidebar {
+    position: fixed !important;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    width: min(16rem, 85vw) !important;
     max-width: 85vw;
+    height: 100vh;
     height: 100dvh;
-    flex: none;
-    z-index: 50;
+    flex: 0 0 auto !important;
+    z-index: 60 !important;
     overflow-y: auto;
-    transform: translateX(-100%);
-    transition: transform 0.25s ease;
+    transform: translateX(-105%);
+    transition: transform .25s ease;
+    visibility: hidden;
     box-shadow: 0 0 24px rgb(15 23 42 / 18%);
   }
 
-  body.mobile-sidebar-enabled.flex-row-reverse #app-sidebar {
-    inset: 0 0 0 auto;
-    transform: translateX(100%);
+  body#app-body.flex-row-reverse > #app-sidebar {
+    left: auto;
+    right: 0;
+    transform: translateX(105%);
   }
 
-  body.mobile-sidebar-enabled.sidebar-open #app-sidebar,
-  body.mobile-sidebar-enabled.flex-row-reverse.sidebar-open #app-sidebar {
+  body#app-body.sidebar-open > #app-sidebar {
     transform: translateX(0);
+    visibility: visible;
+  }
+
+  body#app-body > div:not(#sidebar-overlay) {
+    display: flex;
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+
+  body#app-body header {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 4rem;
+    height: auto;
+    padding: .75rem 1rem;
+    gap: .5rem;
+  }
+
+  body#app-body header > div {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  body#app-body header h1 {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: .875rem;
+  }
+
+  body#app-body main {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    padding: 1rem;
+  }
+
+  body#app-body main > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #mobile-menu-button,
+  .mobile-menu-button {
+    display: inline-flex !important;
+    flex: 0 0 2.5rem;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: .75rem;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  #sidebar-position-button {
+    display: none !important;
   }
 
   #sidebar-overlay {
     position: fixed;
     inset: 0;
-    z-index: 40;
+    z-index: 50;
+    display: block;
+    border: 0;
     background: rgb(15 23 42 / 45%);
   }
 
-  body.mobile-sidebar-enabled header {
-    gap: 0.75rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-
-  body.mobile-sidebar-enabled header h1 {
-    min-width: 0;
-    font-size: 0.875rem;
-  }
-
-  body.mobile-sidebar-enabled main {
-    padding: 1rem;
-  }
-
-  #mobile-menu-button {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.75rem;
-    background: #f8fafc;
-    color: #334155;
-    font-size: 1.25rem;
-  }
-
-  #sidebar-position-button {
-    display: none;
+  #sidebar-overlay[hidden] {
+    display: none !important;
   }
 }
 
 @media (min-width: 768px) {
   #mobile-menu-button,
+  .mobile-menu-button,
   #sidebar-overlay {
     display: none !important;
   }
 
-  #app-sidebar {
+  body#app-body > #app-sidebar {
+    position: relative;
     flex: 0 0 16rem;
+    width: 16rem;
+    min-width: 16rem;
+  }
+
+  body#app-body > div:not(#sidebar-overlay) {
+    flex: 1 1 0%;
+    min-width: 0;
   }
 }
 
