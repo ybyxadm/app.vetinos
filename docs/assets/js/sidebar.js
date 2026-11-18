@@ -9,7 +9,13 @@ onAuthStateChanged(auth, (user) => {
   if (!user) {
     window.location.href = "acesso.html";
   }
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeSidebarLayout, { once: true });
+} else {
+  initializeSidebarLayout();
+}
 
 function renderSidebar(activePage = 'dashboard') {
   const sidebarHTML = `
@@ -76,11 +82,10 @@ window.applyTheme = function(primary, hover, lightBg) {
   localStorage.setItem('ybyx_light', lightBg);
 };
 
-window.addEventListener('DOMContentLoaded', () => {
+function initializeSidebarLayout() {
   const body = document.getElementById('app-body');
   const menuButton = document.getElementById('mobile-menu-button');
   if (body && menuButton) {
-    body.classList.add('mobile-sidebar-enabled');
     const overlay = document.createElement('button');
     overlay.id = 'sidebar-overlay';
     overlay.type = 'button';
@@ -90,14 +95,15 @@ window.addEventListener('DOMContentLoaded', () => {
     body.appendChild(overlay);
 
     menuButton.addEventListener('click', () => window.toggleMobileSidebar());
-    document.querySelectorAll('#app-sidebar a').forEach(link => {
-      link.addEventListener('click', () => window.toggleMobileSidebar(true));
-    });
   }
 
   if (localStorage.getItem('ybyx_sidebar_right') === 'true' && body) {
     body.classList.add('flex-row-reverse');
   }
+
+  document.addEventListener('click', (event) => {
+    if (event.target.closest('#app-sidebar a')) window.toggleMobileSidebar(true);
+  });
 
   const p = localStorage.getItem('ybyx_primary');
   const h = localStorage.getItem('ybyx_hover');
