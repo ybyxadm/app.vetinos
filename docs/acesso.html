@@ -26,22 +26,22 @@
       </div>
 
       <!-- ALERTA DE ERRO -->
-      <div id="error-alert" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-xs font-semibold">
+      <div id="error-alert" role="alert" aria-live="polite" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-xs font-semibold">
         Não foi possível entrar. Confira seu e-mail e sua senha.
       </div>
 
-      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+      <form id="login-form" class="space-y-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">E-mail</label>
-          <input type="email5" id="l-email" required placeholder="seu@email.com" class="w-full text-sm px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-primary">
+          <label for="l-email" class="block text-xs font-semibold text-slate-700 mb-1">E-mail</label>
+          <input type="email" id="l-email" required autocomplete="username" placeholder="seu@email.com" class="w-full text-sm px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-primary">
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Senha</label>
-          <input type="password" id="l-password" required placeholder="••••••••" class="w-full text-sm px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-primary">
+          <label for="l-password" class="block text-xs font-semibold text-slate-700 mb-1">Senha</label>
+          <input type="password" id="l-password" required autocomplete="current-password" placeholder="••••••••" class="w-full text-sm px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-primary">
         </div>
 
-        <button type="submit" class="w-full bg-primary hover:bg-primaryHover text-white text-sm font-bold py-3 rounded-xl transition-colors shadow-sm">
+        <button id="login-button" type="submit" class="w-full bg-primary hover:bg-primaryHover text-white text-sm font-bold py-3 rounded-xl transition-colors shadow-sm">
           Entrar no sistema
         </button>
       </form>
@@ -84,30 +84,46 @@
 
   </div>
 
-  <!-- SCRIPT DE AUTENTICAÇÃO COM FIREBASE -->
+  <!-- AUTENTICAÇÃO COM FIREBASE -->
   <script type="module">
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { db } from "./src/firebase.js";
+    import { auth } from "./assets/src/firebase.js";
+    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    const auth = getAuth();
+    const form = document.getElementById("login-form");
+    const errorAlert = document.getElementById("error-alert");
+    const loginButton = document.getElementById("login-button");
 
-    window.handleLogin = async function(e) {
-      e.preventDefault();
-      const email = document.getElementById('l-email').value;
-      const password = document.getElementById('l-password').value;
-      const errorAlert = document.getElementById('error-alert');
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
 
-      errorAlert.classList.add('hidden');
+      const email = document.getElementById("l-email").value.trim();
+      const password = document.getElementById("l-password").value;
+
+      errorAlert.classList.add("hidden");
+      loginButton.disabled = true;
+      loginButton.textContent = "Entrando...";
 
       try {
         await signInWithEmailAndPassword(auth, email, password);
-        // Login bem-sucedido! Redireciona para o dashboard principal
         window.location.href = "dashboard.html";
       } catch (error) {
         console.error("Erro no login:", error.code, error.message);
-        errorAlert.classList.remove('hidden');
+
+        const messages = {
+          "auth/invalid-credential": "E-mail ou senha incorretos.",
+          "auth/user-not-found": "Não existe uma conta com este e-mail.",
+          "auth/wrong-password": "Senha incorreta.",
+          "auth/invalid-email": "Informe um endereço de e-mail válido.",
+          "auth/too-many-requests": "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
+          "auth/network-request-failed": "Falha de conexão. Verifique sua internet e tente novamente."
+        };
+
+        errorAlert.textContent = messages[error.code] || "Não foi possível entrar. Tente novamente.";
+        errorAlert.classList.remove("hidden");
+        loginButton.disabled = false;
+        loginButton.textContent = "Entrar no sistema";
       }
-    }
+    });
   </script>
 </body>
 </html>
