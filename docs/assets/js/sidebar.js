@@ -9,13 +9,7 @@ onAuthStateChanged(auth, (user) => {
   if (!user) {
     window.location.href = "acesso.html";
   }
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeSidebarLayout, { once: true });
-} else {
-  initializeSidebarLayout();
-}
+});
 
 function renderSidebar(activePage = 'dashboard') {
   const sidebarHTML = `
@@ -57,10 +51,13 @@ window.renderSidebar = renderSidebar;
 window.toggleMobileSidebar = function(forceClose = false) {
   const body = document.getElementById('app-body');
   if (!body) return;
+
   const shouldOpen = forceClose ? false : !body.classList.contains('sidebar-open');
   body.classList.toggle('sidebar-open', shouldOpen);
+
   const button = document.getElementById('mobile-menu-button');
   if (button) button.setAttribute('aria-expanded', String(shouldOpen));
+
   const overlay = document.getElementById('sidebar-overlay');
   if (overlay) overlay.hidden = !shouldOpen;
 };
@@ -85,7 +82,8 @@ window.applyTheme = function(primary, hover, lightBg) {
 function initializeSidebarLayout() {
   const body = document.getElementById('app-body');
   const menuButton = document.getElementById('mobile-menu-button');
-  if (body && menuButton) {
+
+  if (body && menuButton && !document.getElementById('sidebar-overlay')) {
     const overlay = document.createElement('button');
     overlay.id = 'sidebar-overlay';
     overlay.type = 'button';
@@ -102,15 +100,26 @@ function initializeSidebarLayout() {
   }
 
   document.addEventListener('click', (event) => {
-    if (event.target.closest('#app-sidebar a')) window.toggleMobileSidebar(true);
+    if (event.target.closest('#app-sidebar a')) {
+      window.toggleMobileSidebar(true);
+    }
   });
 
-  const p = localStorage.getItem('ybyx_primary');
-  const h = localStorage.getItem('ybyx_hover');
-  const l = localStorage.getItem('ybyx_light');
-  if (p && h) {
-    document.documentElement.style.setProperty('--ybyx-primary', p);
-    document.documentElement.style.setProperty('--ybyx-primary-hover', h);
-    if (l) document.documentElement.style.setProperty('--ybyx-primary-light', l);
+  const primary = localStorage.getItem('ybyx_primary');
+  const hover = localStorage.getItem('ybyx_hover');
+  const light = localStorage.getItem('ybyx_light');
+
+  if (primary && hover) {
+    document.documentElement.style.setProperty('--ybyx-primary', primary);
+    document.documentElement.style.setProperty('--ybyx-primary-hover', hover);
+    if (light) {
+      document.documentElement.style.setProperty('--ybyx-primary-light', light);
+    }
   }
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeSidebarLayout, { once: true });
+} else {
+  initializeSidebarLayout();
+}
