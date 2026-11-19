@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Relatórios de Estoque | Vetinos — YBYX</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>
+    tailwind.config = { theme: { extend: { colors: { primary: 'var(--ybyx-primary, #f97316)', primaryHover: 'var(--ybyx-primary-hover, #ea580c)', primaryLight: 'var(--ybyx-primary-light, #fff7ed)' } } } }
+  </script>
+</head>
+<body id="app-body" class="bg-[var(--ybyx-primary-light)] text-slate-800 min-h-screen flex font-sans">
+  <aside id="app-sidebar" class="w-64 bg-white border-r border-slate-200 flex flex-col z-30 transition-all duration-300 no-print shadow-sm"></aside>
+
+  <div class="flex-1 flex flex-col min-w-0">
+    <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between no-print">
+      <h1 class="text-base font-bold text-slate-900">Relatórios de Estoque</h1>
+      <button type="button" onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-2 px-4 rounded-xl">🖨️ Imprimir</button>
+    </header>
+
+    <main class="p-6 flex-1 overflow-y-auto space-y-5">
+      <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+        Relatório baseado no catálogo local deste navegador. Não representa consolidação entre usuários, dispositivos ou unidades.
+      </div>
+
+      <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <article class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <p class="text-xs text-slate-500">Produtos cadastrados</p>
+          <p id="report-products" class="text-2xl font-bold text-slate-900 mt-1">0</p>
+        </article>
+        <article class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <p class="text-xs text-slate-500">Unidades em estoque</p>
+          <p id="report-units" class="text-2xl font-bold text-slate-900 mt-1">0</p>
+        </article>
+        <article class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <p class="text-xs text-slate-500">Produtos sem estoque</p>
+          <p id="report-empty" class="text-2xl font-bold text-slate-900 mt-1">0</p>
+        </article>
+      </section>
+
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+        <div class="p-4 border-b border-slate-100">
+          <h2 class="font-bold text-sm text-slate-800">Posição atual do estoque</h2>
+        </div>
+        <table class="w-full min-w-[650px] text-left border-collapse text-sm">
+          <thead>
+            <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+              <th class="py-3 px-4 font-semibold">Código</th>
+              <th class="py-3 px-4 font-semibold">Produto</th>
+              <th class="py-3 px-4 font-semibold">Categoria</th>
+              <th class="py-3 px-4 font-semibold">Validade</th>
+              <th class="py-3 px-4 text-right font-semibold">Quantidade</th>
+            </tr>
+          </thead>
+          <tbody id="report-table-body" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </section>
+      <p id="report-error" role="alert" class="hidden text-sm text-red-700"></p>
+    </main>
+  </div>
+
+  <script src="assets/js/sidebar.js"></script>
+  <script src="assets/js/products-store.js"></script>
+  <script>
+    renderSidebar("relatorios");
+
+    function loadReport() {
+      const tbody = document.getElementById("report-table-body");
+      const error = document.getElementById("report-error");
+      try {
+        const store = window.VetinosProducts;
+        const products = store.getProducts();
+        const safe = store.escapeHtml;
+        document.getElementById("report-products").textContent = products.length;
+        document.getElementById("report-units").textContent = products.reduce(function (sum, item) {
+          return sum + (Number(item.stock) || 0);
+        }, 0);
+        document.getElementById("report-empty").textContent = products.filter(function (item) {
+          return (Number(item.stock) || 0) === 0;
+        }).length;
+
+        if (!products.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum produto cadastrado.</td></tr>';
+          error.classList.add("hidden");
+          return;
+        }
+
+        tbody.innerHTML = products.map(function (product) {
+          return '<tr class="hover:bg-slate-50">' +
+            '<td class="py-3 px-4 font-mono text-xs">' + safe(product.code) + '</td>' +
+            '<td class="py-3 px-4 font-medium">' + safe(product.name) + '</td>' +
+            '<td class="py-3 px-4">' + safe(product.category) + '</td>' +
+            '<td class="py-3 px-4">' + safe(product.expiry || "-") + '</td>' +
+            '<td class="py-3 px-4 text-right font-semibold">' + (Number(product.stock) || 0) + ' un</td>' +
+          '</tr>';
+        }).join("");
+        error.classList.add("hidden");
+      } catch (exception) {
+        error.textContent = "Não foi possível gerar o relatório: " + exception.message;
+        error.classList.remove("hidden");
+      }
+    }
+
+    window.addEventListener("vetinos:products-updated", loadReport);
+    loadReport();
+  </script>
+</body>
+</html>
