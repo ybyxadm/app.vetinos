@@ -23,7 +23,7 @@
       </div>
     </header>
 
-    <main class="p-6 flex-1 overflow-y-auto space-y-6">
+    <main class="p-6 flex-1 overflow-y-auto space-y-6"><div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">Os produtos desta versão ficam armazenados somente neste navegador. Ainda não há sincronização com o Firestore ou com outros dispositivos.</div><p id="products-feedback" role="status" aria-live="polite" class="hidden text-sm"></p>
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <table class="w-full text-left border-collapse text-sm">
           <thead>
@@ -95,98 +95,93 @@
     </div>
   </div>
 
-  <script type="module" src="assets/js/sidebar.js"></script>
+  <script src="assets/js/sidebar.js"></script>
+  <script src="assets/js/products-store.js"></script>
   <script>
-    renderSidebar('estoque');
+    renderSidebar("estoque");
+    const store = window.VetinosProducts;
+    const tbody = document.getElementById("products-table-body");
+    const feedback = document.getElementById("products-feedback");
+    const form = document.getElementById("product-form");
+    const modal = document.getElementById("product-modal");
 
-    function getProducts() {
-      const data = localStorage.getItem('ybyx_products');
-      if (!data) {
-        const initial = [
-          { id: '1', code: '000.001', barcode: '78910001', name: 'Dipirona 500mg/ml', category: 'Medicamento', expiry: '05/2027', stock: 50, cost: 'R$ 12,00', supplier: 'VetMaster' }
-        ];
-        localStorage.setItem('ybyx_products', JSON.stringify(initial));
-        return initial;
-      }
-      return JSON.parse(data);
+    function showFeedback(message, isError) {
+      feedback.textContent = message;
+      feedback.className = "text-sm " + (isError ? "text-red-700" : "text-green-700");
     }
 
     function loadProducts() {
-      const list = getProducts();
-      const tbody = document.getElementById('products-table-body');
-      tbody.innerHTML = list.length === 0 ? `<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhum produto cadastrado.</td></tr>` : '';
-      list.forEach(p => {
-        tbody.innerHTML += `
-          <tr class="hover:bg-slate-50">
-            <td class="py-3 px-4 font-mono text-xs font-bold text-primary">${p.code}</td>
-            <td class="py-3 px-4 font-mono text-xs text-slate-500">${p.barcode || '-'}</td>
-            <td class="py-3 px-4 font-medium text-slate-900">${p.name}</td>
-            <td class="py-3 px-4 text-slate-600">${p.category}</td>
-            <td class="py-3 px-4 font-mono text-xs text-slate-600">${p.expiry || '-'}</td>
-            <td class="py-3 px-4 font-semibold text-slate-800">${p.stock} un</td>
-            <td class="py-3 px-4 text-right no-print"><button onclick="deleteProduct('${p.id}')" class="text-slate-400 hover:text-red-600 text-xs font-medium">Excluir</button></td>
-          </tr>
-        `;
-      });
-    }
-
-    function openProductModal() { document.getElementById('product-form').reset(); document.getElementById('product-modal').classList.remove('hidden'); }
-    function closeProductModal() { document.getElementById('product-modal').classList.add('hidden'); }
-
-    function handleProductSubmit(e) {
-      e.preventDefault();
-      const list = getProducts();
-      const nextSeq = list.length + 1;
-      const formattedCode = String(nextSeq).padStart(3, '0') + '.' + String(Math.floor(100 + Math.random() * 900));
-
-      const productName = document.getElementById('p-name').value;
-      const productExpiry = document.getElementById('p-expiry').value;
-
-      const newProduct = {
-        id: Date.now().toString(),
-        code: formattedCode,
-        barcode: document.getElementById('p-barcode').value,
-        name: productName,
-        category: document.getElementById('p-category').value,
-        expiry: productExpiry,
-        stock: parseInt(document.getElementById('p-stock').value) || 0,
-        cost: document.getElementById('p-cost').value,
-        supplier: document.getElementById('p-supplier').value
-      };
-
-      list.push(newProduct);
-      localStorage.setItem('ybyx_products', JSON.stringify(list));
-
-      let validities = JSON.parse(localStorage.getItem('ybyx_validities') || '[]');
-      let expiryFormatted = '2027-12-31';
-      if (productExpiry && productExpiry.includes('/')) {
-        const parts = productExpiry.split('/');
-        if (parts.length === 2) { expiryFormatted = `${parts[1]}-${parts[0]}-01`; }
+      try {
+        const products = store.getProducts();
+        if (!products.length) {
+          tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhum produto cadastrado.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = products.map(function (p) {
+          return '<tr class="hover:bg-slate-50">' +
+            '<td class="py-3 px-4 font-mono text-xs font-bold text-primary">' + store.escapeHtml(p.code) + '</td>' +
+            '<td class="py-3 px-4 font-mono text-xs text-slate-500">' + store.escapeHtml(p.barcode || "-") + '</td>' +
+            '<td class="py-3 px-4 font-medium text-slate-900">' + store.escapeHtml(p.name) + '</td>' +
+            '<td class="py-3 px-4 text-slate-600">' + store.escapeHtml(p.category) + '</td>' +
+            '<td class="py-3 px-4 font-mono text-xs text-slate-600">' + store.escapeHtml(p.expiry || "-") + '</td>' +
+            '<td class="py-3 px-4 font-semibold text-slate-800">' + (Number(p.stock) || 0) + ' un</td>' +
+            '<td class="py-3 px-4 text-right no-print"><button type="button" data-delete-id="' + store.escapeHtml(p.id) + '" class="text-slate-400 hover:text-red-600 text-xs font-medium">Excluir</button></td>' +
+          '</tr>';
+        }).join("");
+      } catch (error) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-red-700">Não foi possível carregar os produtos.</td></tr>';
+        showFeedback(error.message, true);
+        console.error("Erro ao carregar produtos:", error);
       }
-
-      validities.push({
-        id: 'val-' + newProduct.id,
-        name: productName,
-        expiry: expiryFormatted,
-        expiryDisplay: productExpiry,
-        batch: 'LOTE-' + Math.floor(1000 + Math.random() * 9000),
-        location: 'Farmácia Central'
-      });
-      localStorage.setItem('ybyx_validities', JSON.stringify(validities));
-
-      closeProductModal();
-      loadProducts();
-      alert('Produto cadastrado e integrado com sucesso ao controle de validades!');
     }
 
-    function deleteProduct(id) {
-      if (confirm('Deseja excluir este produto?')) {
-        localStorage.setItem('ybyx_products', JSON.stringify(getProducts().filter(p => p.id !== id)));
+    function openProductModal() {
+      form.reset();
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeProductModal() {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      try {
+        store.createProduct({
+          name: document.getElementById("p-name").value,
+          category: document.getElementById("p-category").value,
+          expiry: document.getElementById("p-expiry").value,
+          stock: Number(document.getElementById("p-stock").value),
+          cost: document.getElementById("p-cost").value,
+          supplier: document.getElementById("p-supplier").value,
+          barcode: document.getElementById("p-barcode").value
+        });
+        closeProductModal();
+        showFeedback("Produto cadastrado neste navegador e disponível no Inventário, Validades e Relatórios deste mesmo navegador.", false);
         loadProducts();
+      } catch (error) {
+        showFeedback(error.message, true);
       }
-    }
+    });
 
-    window.addEventListener('DOMContentLoaded', loadProducts);
+    tbody.addEventListener("click", function (event) {
+      const button = event.target.closest("[data-delete-id]");
+      if (!button || !window.confirm("Deseja excluir este produto do catálogo local?")) return;
+      try {
+        store.deleteProduct(button.dataset.deleteId);
+        showFeedback("Produto removido do armazenamento deste navegador.", false);
+        loadProducts();
+      } catch (error) {
+        showFeedback("Não foi possível excluir: " + error.message, true);
+      }
+    });
+
+    window.openProductModal = openProductModal;
+    window.closeProductModal = closeProductModal;
+    window.addEventListener("vetinos:products-updated", loadProducts);
+    loadProducts();
   </script>
 </body>
 </html>
