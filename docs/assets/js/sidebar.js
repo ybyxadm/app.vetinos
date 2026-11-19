@@ -82,6 +82,13 @@
     if (!body) return;
     const shouldOpen = forceClose ? false : !body.classList.contains("sidebar-open");
     body.classList.toggle("sidebar-open", shouldOpen);
+    if (!shouldOpen) {
+      try {
+        sessionStorage.removeItem("vetinos_sidebar_open_after_navigation");
+      } catch (error) {
+        // A navegação continua funcionando mesmo se sessionStorage estiver indisponível.
+      }
+    }
     const button = document.getElementById("mobile-menu-button");
     if (button) button.setAttribute("aria-expanded", String(shouldOpen));
     const overlay = document.getElementById("sidebar-overlay");
@@ -144,9 +151,25 @@
       body.classList.add("flex-row-reverse");
     }
 
+    // Mantém o menu aberto depois de navegar para outra página.
+    // O estado é transferido entre páginas da mesma aba por sessionStorage.
+    const keepSidebarOpen = sessionStorage.getItem("vetinos_sidebar_open_after_navigation") === "true";
+    if (keepSidebarOpen) {
+      sessionStorage.removeItem("vetinos_sidebar_open_after_navigation");
+      window.toggleMobileSidebar(false);
+    }
+
     document.addEventListener("click", (event) => {
-      if (event.target instanceof Element && event.target.closest("#app-sidebar a")) {
-        window.toggleMobileSidebar(true);
+      const link = event.target instanceof Element
+        ? event.target.closest("#app-sidebar a[href]")
+        : null;
+      if (!link) return;
+
+      // A próxima página reabre a barra lateral automaticamente no celular.
+      try {
+        sessionStorage.setItem("vetinos_sidebar_open_after_navigation", "true");
+      } catch (error) {
+        console.warn("Não foi possível preservar o menu entre páginas:", error);
       }
     });
 
