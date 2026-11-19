@@ -20,7 +20,7 @@
       <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-2 px-4 rounded-xl transition-colors">🖨️ Imprimir Folha de Contagem</button>
     </header>
 
-    <main class="p-6 flex-1 overflow-y-auto space-y-6">
+    <main class="p-6 flex-1 overflow-y-auto space-y-6"><div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">O inventário consulta o catálogo salvo neste navegador. As alterações ainda não são sincronizadas com outros dispositivos ou com o Firestore.</div><p id="inventory-feedback" role="status" aria-live="polite" class="hidden text-sm"></p>
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <table class="w-full text-left border-collapse text-sm">
           <thead>
@@ -39,66 +39,88 @@
   </div>
 
   <script src="assets/js/sidebar.js"></script>
+  <script src="assets/js/products-store.js"></script>
   <script>
-    renderSidebar('inventario');
+    renderSidebar("inventario");
+    const store = window.VetinosProducts;
+    const tbody = document.getElementById("inventory-table-body");
+    const feedback = document.getElementById("inventory-feedback");
+
+    function showInventoryFeedback(message, isError) {
+      feedback.textContent = message;
+      feedback.className = "text-sm " + (isError ? "text-red-700" : "text-green-700");
+    }
 
     function loadInventory() {
-      const products = JSON.parse(localStorage.getItem('ybyx_products') || '[]');
-      const tbody = document.getElementById('inventory-table-body');
-      tbody.innerHTML = products.length === 0 ? `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum produto no estoque para inventário.</td></tr>` : '';
-      
-      products.forEach(p => {
-        const physical = p.physicalStock !== undefined ? p.physicalStock : p.stock;
-        const diff = physical - p.stock;
-        let diffBadge = `<span class="px-2 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-700">0</span>`;
-        if (diff > 0) diffBadge = `<span class="px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-700">+${diff}</span>`;
-        if (diff < 0) diffBadge = `<span class="px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">${diff}</span>`;
-
-        tbody.innerHTML += `
-          <tr class="hover:bg-slate-50">
-            <td class="py-3 px-4 font-medium text-slate-900">${p.name} <span class="text-xs font-mono text-slate-400">(${p.code})</span></td>
-            <td class="py-3 px-4 font-semibold text-slate-700">${p.stock} un</td>
-            <td class="py-3 px-4">
-              <div class="flex items-center gap-2">
-                <button onclick="adjustStock('${p.id}', -1)" class="w-7 h-7 bg-slate-200 hover:bg-slate-300 rounded-lg font-bold text-slate-700">-</button>
-                <span id="phys-${p.id}" class="w-8 text-center font-bold">${physical}</span>
-                <button onclick="adjustStock('${p.id}', 1)" class="w-7 h-7 bg-slate-200 hover:bg-slate-300 rounded-lg font-bold text-slate-700">+</button>
-              </div>
-            </td>
-            <td class="py-3 px-4">${diffBadge}</td>
-            <td class="py-3 px-4 text-right no-print"><button onclick="saveCount('${p.id}')" class="text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-semibold">Salvar</button></td>
-          </tr>
-        `;
-      });
-    }
-
-    window.adjustStock = function(id, delta) {
-      let products = JSON.parse(localStorage.getItem('ybyx_products') || '[]');
-      products = products.map(p => {
-        if (p.id === id) {
-          if (p.physicalStock === undefined) p.physicalStock = p.stock;
-          p.physicalStock = Math.max(0, p.physicalStock + delta);
+      try {
+        const products = store.getProducts();
+        if (!products.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum produto no estoque para inventário.</td></tr>';
+          return;
         }
-        return p;
-      });
-      localStorage.setItem('ybyx_products', JSON.stringify(products));
-      loadInventory();
+        tbody.innerHTML = products.map(function (p) {
+          const systemStock = Number(p.stock) || 0;
+          const physicalStock = p.physicalStock === undefined ? systemStock : Number(p.physicalStock) || 0;
+          const difference = physicalStock - systemStock;
+          const badgeClass = difference > 0 ? "bg-green-100 text-green-700" :
+            difference < 0 ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-700";
+          const differenceText = difference > 0 ? "+" + difference : String(difference);
+          const id = store.escapeHtml(p.id);
+          return '<tr class="hover:bg-slate-50">' +
+            '<td class="py-3 px-4 font-medium text-slate-900">' + store.escapeHtml(p.name) + ' <span class="text-xs font-mono text-slate-400">(' + store.escapeHtml(p.code) + ')</span></td>' +
+            '<td class="py-3 px-4 font-semibold text-slate-700">' + systemStock + ' un</td>' +
+            '<td class="py-3 px-4"><div class="flex items-center gap-2">' +
+              '<button type="button" data-adjust-id="' + id + '" data-delta="-1" class="w-7 h-7 bg-slate-200 hover:bg-slate-300 rounded-lg font-bold text-slate-700">-</button>' +
+              '<span class="w-8 text-center font-bold">' + physicalStock + '</span>' +
+              '<button type="button" data-adjust-id="' + id + '" data-delta="1" class="w-7 h-7 bg-slate-200 hover:bg-slate-300 rounded-lg font-bold text-slate-700">+</button>' +
+            '</div></td>' +
+            '<td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-xs font-bold ' + badgeClass + '">' + differenceText + '</span></td>' +
+            '<td class="py-3 px-4 text-right no-print"><button type="button" data-save-id="' + id + '" class="text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-semibold">Aplicar contagem</button></td>' +
+          '</tr>';
+        }).join("");
+      } catch (error) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-700">Não foi possível carregar o inventário.</td></tr>';
+        showInventoryFeedback(error.message, true);
+        console.error("Erro ao carregar inventário:", error);
+      }
     }
 
-    window.saveCount = function(id) {
-      let products = JSON.parse(localStorage.getItem('ybyx_products') || '[]');
-      products = products.map(p => {
-        if (p.id === id && p.physicalStock !== undefined) {
-          p.stock = p.physicalStock;
-        }
-        return p;
-      });
-      localStorage.setItem('ybyx_products', JSON.stringify(products));
-      alert('Contagem sincronizada com o estoque oficial!');
-      loadInventory();
+    function adjustStock(id, delta) {
+      try {
+        const product = store.getProducts().find(function (item) { return String(item.id) === String(id); });
+        if (!product) throw new Error("Produto não encontrado.");
+        const current = product.physicalStock === undefined ? Number(product.stock) || 0 : Number(product.physicalStock) || 0;
+        store.updateProduct(id, { physicalStock: Math.max(0, current + delta) });
+        loadInventory();
+      } catch (error) {
+        showInventoryFeedback("Não foi possível atualizar a contagem: " + error.message, true);
+      }
     }
 
-    window.addEventListener('DOMContentLoaded', loadInventory);
+    function saveCount(id) {
+      try {
+        const product = store.getProducts().find(function (item) { return String(item.id) === String(id); });
+        if (!product) throw new Error("Produto não encontrado.");
+        const physicalStock = product.physicalStock === undefined ? Number(product.stock) || 0 : Number(product.physicalStock) || 0;
+        store.updateProduct(id, { stock: physicalStock, physicalStock: physicalStock });
+        showInventoryFeedback("Contagem aplicada ao catálogo deste navegador. A alteração também aparece em Cadastro de Produtos e Relatórios.", false);
+        loadInventory();
+      } catch (error) {
+        showInventoryFeedback("Não foi possível aplicar a contagem: " + error.message, true);
+      }
+    }
+
+    tbody.addEventListener("click", function (event) {
+      const adjustButton = event.target.closest("[data-adjust-id]");
+      const saveButton = event.target.closest("[data-save-id]");
+      if (adjustButton) adjustStock(adjustButton.dataset.adjustId, Number(adjustButton.dataset.delta));
+      if (saveButton) saveCount(saveButton.dataset.saveId);
+    });
+
+    window.adjustStock = adjustStock;
+    window.saveCount = saveCount;
+    window.addEventListener("vetinos:products-updated", loadInventory);
+    loadInventory();
   </script>
 </body>
 </html>
