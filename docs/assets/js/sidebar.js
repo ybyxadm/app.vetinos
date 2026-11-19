@@ -168,7 +168,10 @@
           if (!user) window.location.replace("acesso.html");
         });
       })
-      .catch((error) => console.error("Não foi possível verificar a sessão do Vetinos:", error));
+      .catch((error) => {
+        console.error("Não foi possível verificar a sessão do Vetinos:", error);
+        window.location.replace("acesso.html");
+      });
   }
 
   if (document.readyState === "loading") {
